@@ -143,7 +143,7 @@ def load_data() -> tuple[pd.DataFrame | None, pd.DataFrame | None]:
 
     :return: tuple (df_logs, df_notes)
     """
-    print("=== CHARGEMENT DES DONNÉES ===")
+    print("CHARGEMENT DES DONNÉES...")
 
     df_logs = load_logs()
     df_notes = load_notes()
