@@ -13,7 +13,7 @@ Ce module :
 import os
 import pandas as pd
 
-from config import (
+from src.config import (
     LOGS_PATH,
     NOTES_PATH,
     EXPECTED_LOGS_COLUMNS,

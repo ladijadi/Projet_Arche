@@ -1,7 +1,7 @@
 # preprocessing.py
 
 import pandas as pd
-from config import LOGS_TIME_COL, LOGS_USER_COL, NOTES_USER_COL, NOTES_TARGET_COL
+from src.config import LOGS_TIME_COL, LOGS_USER_COL, NOTES_USER_COL, NOTES_TARGET_COL
 
 
 def preparer_donnees(df_logs, df_notes):
@@ -96,7 +96,7 @@ def _filtrer_etudiants(df_logs, df_notes):
     return df_logs
 
 if __name__ == "__main__":
-    from data_loader import load_data
+    from src.data_loader import load_data
 
     df_logs, df_notes = load_data()
     df_logs_clean, df_notes_clean = preparer_donnees(df_logs, df_notes)

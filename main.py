@@ -9,9 +9,9 @@ Ce script :
 - affiche un résumé
 """
 
-from data_loader import load_data
-from preprocessing import preparer_donnees
-
+from src.data_loader import load_data
+from src.preprocessing import preparer_donnees
+from src.exploration import lancer_exploration
 
 def main():
     print("DÉMARRAGE DU PROGRAMME")
@@ -36,6 +36,9 @@ def main():
     print(f"Nombre d'étudiants (logs) : {df_logs['pseudo'].nunique()}")
     print(f"Nombre d'étudiants (notes) : {df_notes['pseudo'].nunique()}")
 
+    # 4. Exploration
+    lancer_exploration(df_logs, df_notes)
+    
     print("\nProgramme exécuté avec succès.")
 
 

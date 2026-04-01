@@ -2,7 +2,7 @@
 
 import pandas as pd
 import matplotlib.pyplot as plt
-from config import LOGS_USER_COL, LOGS_CONTEXT_COL, LOGS_EVENT_COL, NOTES_USER_COL, NOTES_TARGET_COL
+from src.config import LOGS_USER_COL, LOGS_CONTEXT_COL, LOGS_EVENT_COL, NOTES_USER_COL, NOTES_TARGET_COL
 
 
 def explorer_logs(df_logs: pd.DataFrame) -> None:
@@ -122,8 +122,8 @@ def lancer_exploration(df_logs: pd.DataFrame, df_notes: pd.DataFrame) -> None:
     print("\nExploration terminée.")
 
 if __name__ == "__main__":
-    from data_loader import load_data
-    from preprocessing import preparer_donnees
+    from src.data_loader import load_data
+    from src.preprocessing import preparer_donnees
 
     df_logs, df_notes = load_data()
 
