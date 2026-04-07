@@ -13,7 +13,7 @@ Ce module :
 import os
 import pandas as pd
 
-from src.config import (
+from config import (
     LOGS_PATH,
     NOTES_PATH,
     EXPECTED_LOGS_COLUMNS,
@@ -165,3 +165,19 @@ if __name__ == "__main__":
 
         print("\nAperçu des notes :")
         print(notes.head())
+
+        print("\nAffichage des types de données :")
+        print(logs.dtypes)
+        print(notes.dtypes)
+
+        print("\nRésumé rapide des colonnes clés :")
+        print(f"Nombre de contextes uniques : {logs['contexte'].nunique()}")
+        print(f"Nombre de composants uniques : {logs['composant'].nunique()}")
+        print(f"Nombre d'événements uniques : {logs['evenement'].nunique()}")
+
+        print("\nExemples de valeurs :")
+        print(f"Contextes : {logs['contexte'].dropna().unique()[:10]}")
+        print(f"Composants : {logs['composant'].dropna().unique()[:10]}")
+        print(f"Événements : {logs['evenement'].dropna().unique()[:10]}")
+    else:
+        print("Test interrompu : données non disponibles.")

@@ -5,8 +5,14 @@ Configuration générale du projet ARCHE.
 Ce fichier centralise les constantes utilisées dans les différents modules.
 """
 # Chemins des fichiers
-LOGS_PATH = "data/logs.csv"
-NOTES_PATH = "data/notes.csv"
+import os
+
+BASE_DIR = os.path.dirname(os.path.dirname(__file__))
+
+DATA_DIR = os.path.join(BASE_DIR, "data")
+
+LOGS_PATH = os.path.join(DATA_DIR, "logs.csv")
+NOTES_PATH = os.path.join(DATA_DIR, "notes.csv")
 
 # Colonnes du fichier logs
 LOGS_TIME_COL = "heure"
@@ -44,5 +50,15 @@ COMPARISON_MODEL_NAME = "decision_tree_regressor"
 TOP_N_EVENTS = 5
 
 # Paramètres affichage
-APP_TITLE = "Analyse des traces ARCHE"
-WINDOW_SIZE = "700x500"
+WINDOW_SIZE = "680x820"
+APP_TITLE = "Prédiction de la note - ARCHE"
+
+# Seuils interprétation
+SEUIL_CONTEXTES_ELEVE = 40
+SEUIL_CONTEXTES_MOYEN = 15
+
+SEUIL_RATIO_FICHIER_ELEVE = 0.30
+SEUIL_RATIO_FICHIER_MOYEN = 0.10
+
+# Recommandation
+MODELE_RECOMMANDE = "Arbre de décision régressif"
