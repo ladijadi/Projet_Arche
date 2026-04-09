@@ -80,6 +80,27 @@ def regression_multiple(df, variables_retenues, target="note"):
 
     return modele, y_test, y_pred, rmse, r2
 
+def calcul_vif(df, variables):
+    import pandas as pd
+    import statsmodels.api as sm
+    from statsmodels.stats.outliers_influence import variance_inflation_factor
+
+    X = df[variables]
+    X = sm.add_constant(X)
+
+    vif_data = pd.DataFrame()
+    vif_data["variable"] = X.columns
+    vif_data["VIF"] = [
+        variance_inflation_factor(X.values, i)
+        for i in range(X.shape[1])
+    ]
+
+    print("\nVIF (multicolinéarité) :")
+    print(vif_data)
+
+    return vif_data
+
+
 if __name__ == "__main__":
     from data_loader import load_data
     from preprocessing import preparer_donnees
@@ -97,6 +118,7 @@ if __name__ == "__main__":
 
             variables_retenues, modele_stats = selection_backward(df_final)
             regression_multiple(df_final, variables_retenues)
+            calcul_vif(df_final, variables_retenues)
         else:
             print("Erreur : prétraitement impossible.")
     else:

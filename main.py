@@ -3,6 +3,7 @@
 from src.config import *
 from src.data_loader import load_data
 from src.preprocessing import preparer_donnees
+from src.exploration import lancer_exploration, lancer_exploration_brute, lancer_exploration_features
 from src.features_engineering import construire_features
 from src.multiple_regression import selection_backward, regression_multiple
 from src.comparison_model import arbre_decision_regression
@@ -30,18 +31,25 @@ def executer_pipeline():
         print("Erreur lors du prétraitement.")
         return
 
-    # 3. Feature engineering
+    # 3. Exploration des données brutes et préparées
+    lancer_exploration(df_logs, df_notes)
+    lancer_exploration_brute(df_logs, df_notes)
+
+    # 4. Feature engineering
     df_final = construire_features(df_logs, df_notes)
     print("Features construites :", df_final.shape)
 
-    # 4. Régression multiple
+    # 5. Exploration des features
+    lancer_exploration_features(df_final)
+
+    # 6. Régression multiple
     variables_retenues, _ = selection_backward(df_final)
     _, y_test_reg, y_pred_reg, _, _ = regression_multiple(df_final, variables_retenues)
 
-    # 5. Arbre de décision
+    # 7. Arbre de décision
     _, _, y_test_tree, y_pred_tree, _, _ = arbre_decision_regression(df_final)
 
-    # 6. Évaluation
+    # 8. Évaluation
     resultats = comparer_modeles(
         y_test_reg=y_test_reg,
         y_pred_reg=y_pred_reg,
@@ -59,7 +67,7 @@ def main():
     Point d'entrée principal du projet
     """
 
-    print("\n=== PROJET ARCHE - PRÉDICTION DE NOTE ===")
+    print("\nPROJET ARCHE - PRÉDICTION DE NOTES")
 
     # 1. Exécuter pipeline data science
     executer_pipeline()

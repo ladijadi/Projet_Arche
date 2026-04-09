@@ -126,6 +126,36 @@ def afficher_comparaison_graphique(resultats: pd.DataFrame) -> None:
         plt.tight_layout()
         plt.show()
 
+'''import matplotlib.pyplot as plt
+
+variables = ["nb_contextes", "ratio_fichier"]
+coefficients = [0.0233, -1.1326]
+
+plt.figure()
+plt.bar(variables, coefficients)
+plt.xlabel("Variables")
+plt.ylabel("Coefficient")
+plt.title("Impact des variables sur la note (régression multiple)")
+plt.axhline(0)
+plt.show()
+
+import matplotlib.pyplot as plt
+
+modeles = ["Régression", "Arbre"]
+rmse = [0.91, 0.87]
+r2 = [0.233, 0.299]
+
+plt.figure()
+plt.bar(modeles, rmse)
+plt.title("Comparaison des modèles (RMSE)")
+plt.ylabel("RMSE")
+plt.show()
+
+plt.figure()
+plt.bar(modeles, r2)
+plt.title("Comparaison des modèles (R²)")
+plt.ylabel("R²")
+plt.show()'''
 
 if __name__ == "__main__":
     from data_loader import load_data
