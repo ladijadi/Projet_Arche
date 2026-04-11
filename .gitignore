@@ -42,5 +42,5 @@ Thumbs.db
 
 # Project data/artifacts
 data/
-output/
+
 *.log
