@@ -1,4 +1,17 @@
-# preprocessing.py
+'''
+Description preprocessing.py
+Projet : Prédiction de la note à partir des traces ARCHE
+
+Module de prétraitement :
+- nettoyage du fichier notes
+- nettoyage du fichier logs
+- mise en cohérence entre les deux sources
+- audit simple de qualité des données
+
+@author: Khady Diagne
+@version: 1.0
+@date: Avril 2026
+'''
 
 import pandas as pd
 import unicodedata
@@ -15,13 +28,9 @@ from config import (
 
 
 def _normaliser_texte(serie: pd.Series) -> pd.Series:
-    """
-    Nettoie une série texte :
-    - conversion en chaîne
-    - suppression espaces inutiles
-    - passage en minuscules
-    - suppression des accents
-    """
+    '''
+    Normalisation d'une série de texte
+    '''
     return (
         serie.astype(str)
         .str.strip()
@@ -35,10 +44,9 @@ def _normaliser_texte(serie: pd.Series) -> pd.Series:
 
 
 def _categoriser_evenement(evenement: str) -> str:
-    """
-    Regroupe les événements en grandes catégories métier
-    pour simplifier l'analyse comportementale.
-    """
+    '''
+    Regroupement des événements en grandes catégories
+    '''
     if "test" in evenement:
         return "test"
     elif "cours" in evenement or "module" in evenement:
@@ -54,16 +62,12 @@ def _categoriser_evenement(evenement: str) -> str:
 
 
 def preparer_donnees(df_logs: pd.DataFrame, df_notes: pd.DataFrame):
-    """
-    Lance l'ensemble du prétraitement :
-    - nettoyage des notes
-    - nettoyage des logs
-    - cohérence entre logs et notes
-
-    :param df_logs: DataFrame brut des logs
-    :param df_notes: DataFrame brut des notes
-    :return: (df_logs_pret, df_notes_pret) ou (None, None) si erreur
-    """
+    '''
+    Prétraitement global des données
+    :param df_logs: dataframe des logs
+    :param df_notes: dataframe des notes
+    :return: df_logs, df_notes nettoyés
+    '''
     print("\nLANCEMENT DU PRÉTRAITEMENT DES DONNÉES...")
 
     if df_logs is None or df_notes is None:
@@ -84,114 +88,103 @@ def preparer_donnees(df_logs: pd.DataFrame, df_notes: pd.DataFrame):
 
 
 def _traiter_notes(df_notes: pd.DataFrame) -> pd.DataFrame:
-    """
-    Nettoie le fichier notes :
-    - pseudo numérique
-    - suppression des lignes invalides
-    - suppression des doublons
-    - conversion de la note en numérique
-    """
+    '''
+    Traitement du fichier notes
+    '''
     print("\n[1] Analyse du fichier notes")
 
-    df_notes = df_notes.copy()
+    data = df_notes.copy()
 
-    # Uniformiser la colonne pseudo
-    df_notes[NOTES_USER_COL] = pd.to_numeric(df_notes[NOTES_USER_COL], errors="coerce")
-    nb_pseudo_invalides = df_notes[NOTES_USER_COL].isna().sum()
+    # Conversion du pseudo en numérique
+    data[NOTES_USER_COL] = pd.to_numeric(data[NOTES_USER_COL], errors="coerce")
+    nb_pseudo_invalides = data[NOTES_USER_COL].isna().sum()
     print(f"Pseudos invalides dans notes : {nb_pseudo_invalides}")
 
-    df_notes = df_notes.dropna(subset=[NOTES_USER_COL])
-    df_notes[NOTES_USER_COL] = df_notes[NOTES_USER_COL].astype(int)
+    data = data.dropna(subset=[NOTES_USER_COL])
+    data[NOTES_USER_COL] = data[NOTES_USER_COL].astype(int)
 
-    # Supprimer les doublons exacts
-    total_avant = len(df_notes)
-    df_notes = df_notes.drop_duplicates()
-    nb_supprimes = total_avant - len(df_notes)
-    print(f"Lignes supprimées (doublons exacts) : {nb_supprimes}")
+    # Suppression des doublons exacts
+    nb_avant = len(data)
+    data = data.drop_duplicates()
+    nb_doublons = nb_avant - len(data)
+    print(f"Lignes supprimées (doublons exacts) : {nb_doublons}")
 
-    # Uniformiser la note
-    df_notes[NOTES_TARGET_COL] = pd.to_numeric(df_notes[NOTES_TARGET_COL], errors="coerce")
-    nb_notes_invalides = df_notes[NOTES_TARGET_COL].isna().sum()
+    # Conversion de la note en numérique
+    data[NOTES_TARGET_COL] = pd.to_numeric(data[NOTES_TARGET_COL], errors="coerce")
+    nb_notes_invalides = data[NOTES_TARGET_COL].isna().sum()
     print(f"Notes invalides détectées : {nb_notes_invalides}")
 
-    df_notes = df_notes.dropna(subset=[NOTES_TARGET_COL])
+    data = data.dropna(subset=[NOTES_TARGET_COL])
 
-    print(f"Nombre final d'étudiants dans notes : {df_notes[NOTES_USER_COL].nunique()}")
+    print(f"Nombre final d'étudiants dans notes : {data[NOTES_USER_COL].nunique()}")
 
-    return df_notes
+    return data
 
 
 def _traiter_logs(df_logs: pd.DataFrame) -> pd.DataFrame:
-    """
-    Nettoie le fichier logs :
-    - pseudo numérique
-    - dates valides
-    - normalisation texte
-    - suppression des lignes vides
-    - suppression des doublons
-    - création d'une catégorie d'événement
-    """
+    '''
+    Traitement du fichier logs
+    '''
     print("\n[2] Analyse du fichier logs")
 
-    df_logs = df_logs.copy()
+    data = df_logs.copy()
 
-    # Uniformiser pseudo
-    df_logs[LOGS_USER_COL] = pd.to_numeric(df_logs[LOGS_USER_COL], errors="coerce")
-    nb_pseudo_invalides = df_logs[LOGS_USER_COL].isna().sum()
+    # Conversion du pseudo en numérique
+    data[LOGS_USER_COL] = pd.to_numeric(data[LOGS_USER_COL], errors="coerce")
+    nb_pseudo_invalides = data[LOGS_USER_COL].isna().sum()
     print(f"Pseudos invalides dans logs : {nb_pseudo_invalides}")
 
-    df_logs = df_logs.dropna(subset=[LOGS_USER_COL])
-    df_logs[LOGS_USER_COL] = df_logs[LOGS_USER_COL].astype(int)
+    data = data.dropna(subset=[LOGS_USER_COL])
+    data[LOGS_USER_COL] = data[LOGS_USER_COL].astype(int)
 
-    # Uniformiser dates
-    df_logs[LOGS_TIME_COL] = pd.to_datetime(df_logs[LOGS_TIME_COL], errors="coerce")
-    nb_dates_invalides = df_logs[LOGS_TIME_COL].isna().sum()
+    # Conversion de la date
+    data[LOGS_TIME_COL] = pd.to_datetime(data[LOGS_TIME_COL], errors="coerce")
+    nb_dates_invalides = data[LOGS_TIME_COL].isna().sum()
     print(f"Dates non exploitables : {nb_dates_invalides}")
 
-    df_logs = df_logs.dropna(subset=[LOGS_TIME_COL])
+    data = data.dropna(subset=[LOGS_TIME_COL])
 
-    # Normaliser colonnes texte
+    # Normalisation des colonnes texte
     for col in [LOGS_CONTEXT_COL, LOGS_COMPONENT_COL, LOGS_EVENT_COL]:
-        df_logs[col] = df_logs[col].fillna("")
-        df_logs[col] = _normaliser_texte(df_logs[col])
+        data[col] = data[col].fillna("")
+        data[col] = _normaliser_texte(data[col])
 
-    # Supprimer les lignes sans information exploitable
+    # Suppression des lignes sans information exploitable
     masque_vides = (
-        (df_logs[LOGS_CONTEXT_COL] == "")
-        & (df_logs[LOGS_COMPONENT_COL] == "")
-        & (df_logs[LOGS_EVENT_COL] == "")
+        (data[LOGS_CONTEXT_COL] == "")
+        & (data[LOGS_COMPONENT_COL] == "")
+        & (data[LOGS_EVENT_COL] == "")
     )
 
     nb_vides = masque_vides.sum()
     print(f"Lignes sans information de connexion exploitable : {nb_vides}")
 
-    df_logs = df_logs[~masque_vides]
+    data = data[~masque_vides]
 
-    # Supprimer les doublons exacts
-    nb_avant = len(df_logs)
-    df_logs = df_logs.drop_duplicates()
-    nb_doublons = nb_avant - len(df_logs)
+    # Suppression des doublons exacts
+    nb_avant = len(data)
+    data = data.drop_duplicates()
+    nb_doublons = nb_avant - len(data)
     print(f"Doublons supprimés : {nb_doublons}")
 
-    # Catégorisation des événements
-    df_logs["categorie_evenement"] = df_logs[LOGS_EVENT_COL].apply(_categoriser_evenement)
+    # Construction d'une catégorie d'événement plus synthétique
+    data["categorie_evenement"] = data[LOGS_EVENT_COL].apply(_categoriser_evenement)
 
     print("\nValeurs uniques principales après normalisation :")
-    print("Composants :", sorted(df_logs[LOGS_COMPONENT_COL].dropna().unique())[:10])
-    print("Événements :", sorted(df_logs[LOGS_EVENT_COL].dropna().unique())[:10])
-    print("Catégories d'événements :", sorted(df_logs["categorie_evenement"].dropna().unique()))
+    print("Composants :", sorted(data[LOGS_COMPONENT_COL].dropna().unique())[:10])
+    print("Événements :", sorted(data[LOGS_EVENT_COL].dropna().unique())[:10])
+    print("Catégories d'événements :", sorted(data["categorie_evenement"].dropna().unique()))
 
-    print(f"Nombre final de lignes dans logs : {len(df_logs)}")
-    print(f"Nombre final d'étudiants distincts dans logs : {df_logs[LOGS_USER_COL].nunique()}")
+    print(f"Nombre final de lignes dans logs : {len(data)}")
+    print(f"Nombre final d'étudiants distincts dans logs : {data[LOGS_USER_COL].nunique()}")
 
-    return df_logs
+    return data
 
 
 def _filtrer_etudiants(df_logs: pd.DataFrame, df_notes: pd.DataFrame) -> pd.DataFrame:
-    """
-    Ne conserve dans les logs que les étudiants présents dans le fichier notes.
-    Cela permet de construire un jeu supervisé cohérent.
-    """
+    '''
+    Mise en cohérence entre logs et notes
+    '''
     print("\n[3] Cohérence entre logs et notes")
 
     etudiants_notes = set(df_notes[NOTES_USER_COL])
@@ -203,22 +196,49 @@ def _filtrer_etudiants(df_logs: pd.DataFrame, df_notes: pd.DataFrame) -> pd.Data
     print(f"Étudiants dans notes : {nb_notes}")
     print(f"Étudiants dans logs (avant filtre) : {nb_logs_avant}")
 
-    # Conserver uniquement les étudiants pour lesquels on possède une note
-    df_logs = df_logs[df_logs[LOGS_USER_COL].isin(etudiants_notes)]
+    # Conserver uniquement les étudiants présents dans le fichier notes
+    # Cela permet de construire un jeu supervisé cohérent
+    data = df_logs[df_logs[LOGS_USER_COL].isin(etudiants_notes)]
 
-    nb_logs_apres = df_logs[LOGS_USER_COL].nunique()
+    nb_logs_apres = data[LOGS_USER_COL].nunique()
     nb_supprimes = nb_logs_avant - nb_logs_apres
 
     print(f"Étudiants conservés dans logs : {nb_logs_apres}")
     print(f"Étudiants supprimés car absents du fichier notes : {nb_supprimes}")
 
-    # Étudiants sans activité ARCHE mais présents dans notes
-    etudiants_logs_apres = set(df_logs[LOGS_USER_COL])
+    # Étudiants présents dans notes mais sans activité dans logs
+    etudiants_logs_apres = set(data[LOGS_USER_COL])
     nb_sans_activite = len(etudiants_notes - etudiants_logs_apres)
 
     print(f"Étudiants présents dans notes mais sans activité ARCHE : {nb_sans_activite}")
 
-    return df_logs
+    return data
+
+
+def audit_qualite_donnees(df_logs: pd.DataFrame, df_notes: pd.DataFrame) -> None:
+    '''
+    Audit simple de qualité des données
+    '''
+    print("\nAUDIT QUALITÉ DES DONNÉES")
+
+    print("\nValeurs manquantes dans logs :")
+    print(df_logs.isna().sum())
+
+    print("\nValeurs manquantes dans notes :")
+    print(df_notes.isna().sum())
+
+    print("\nNotes hors intervalle [0, 20] :")
+    print(((df_notes[NOTES_TARGET_COL] < 0) | (df_notes[NOTES_TARGET_COL] > 20)).sum())
+
+    print("\nPseudos <= 0 dans notes :")
+    print((df_notes[NOTES_USER_COL] <= 0).sum())
+
+    print("\nPseudos <= 0 dans logs :")
+    print((df_logs[LOGS_USER_COL] <= 0).sum())
+
+    print("\nPlage des dates dans logs :")
+    print("Min :", df_logs[LOGS_TIME_COL].min())
+    print("Max :", df_logs[LOGS_TIME_COL].max())
 
 
 if __name__ == "__main__":
@@ -235,6 +255,7 @@ if __name__ == "__main__":
             print("\nPrétraitement réussi. Aperçu des données :")
             print(df_logs.head())
             print(df_notes.head())
+            audit_qualite_donnees(df_logs, df_notes)
         else:
             print("Erreur lors du prétraitement.")
     else:

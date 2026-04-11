@@ -1,17 +1,37 @@
-# multiple_regression.py
+'''
+Description multiple_regression.py
+Projet : Prédiction de la note à partir des traces ARCHE
 
+Module de régression multiple :
+- sélection descendante des variables
+- estimation du modèle linéaire
+- évaluation sur train/test
+- calcul du VIF
+
+@author: Khady Diagne
+@version: 1.0
+@date: Avril 2026
+'''
+
+import pandas as pd
 import statsmodels.api as sm
+
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_squared_error, r2_score
+from statsmodels.stats.outliers_influence import variance_inflation_factor
 
 
-def selection_backward(df, target="note", seuil_pvalue=0.05):
-    """
-    Sélection descendante des variables par p-value.
-    On part d'un modèle complet raisonnable, puis on retire
-    les variables non significatives une à une.
-    """
+def selection_backward(df: pd.DataFrame, target: str = "note", seuil_pvalue: float = 0.05):
+    '''
+    Sélection descendante des variables par p-value
+    :param df: dataframe final
+    :param target: variable cible
+    :param seuil_pvalue: seuil de significativité
+    :return: variables retenues, modèle OLS final
+    '''
+    print("\nSÉLECTION DESCENDANTE DES VARIABLES...")
+
     variables = [
         "nb_contextes",
         "ratio_test",
@@ -33,9 +53,9 @@ def selection_backward(df, target="note", seuil_pvalue=0.05):
         if max_p <= seuil_pvalue:
             break
 
-        variable_a_supprimer = pvalues.idxmax()
-        print(f"Suppression de {variable_a_supprimer} (p-value = {max_p:.4f})")
-        X = X.drop(columns=[variable_a_supprimer])
+        var_suppr = pvalues.idxmax()
+        print(f"Suppression de {var_suppr} (p-value = {max_p:.4f})")
+        X = X.drop(columns=[var_suppr])
 
     print("\nVariables retenues :")
     print(list(X.columns))
@@ -45,12 +65,16 @@ def selection_backward(df, target="note", seuil_pvalue=0.05):
 
     return list(X.columns), modele
 
-def regression_multiple(df, variables_retenues, target="note"):
-    """
-    Entraîne la régression multiple finale avec sklearn
-    pour évaluer le modèle sur train/test.
-    """
-    print("\nLancement de la régression multiple...")
+
+def regression_multiple(df: pd.DataFrame, variables_retenues: list[str], target: str = "note"):
+    '''
+    Régression linéaire multiple
+    :param df: dataframe final
+    :param variables_retenues: variables explicatives retenues
+    :param target: variable cible
+    :return: modèle, y_test, y_pred, rmse, r2
+    '''
+    print("\nLANCEMENT DE LA RÉGRESSION MULTIPLE...")
 
     X = df[variables_retenues]
     y = df[target]
@@ -80,12 +104,15 @@ def regression_multiple(df, variables_retenues, target="note"):
 
     return modele, y_test, y_pred, rmse, r2
 
-def calcul_vif(df, variables):
-    import pandas as pd
-    import statsmodels.api as sm
-    from statsmodels.stats.outliers_influence import variance_inflation_factor
 
-    X = df[variables]
+def calcul_vif(df: pd.DataFrame, variables: list[str]) -> pd.DataFrame:
+    '''
+    Calcul du facteur d'inflation de variance
+    :param df: dataframe final
+    :param variables: variables explicatives
+    :return: tableau des VIF
+    '''
+    X = df[variables].copy()
     X = sm.add_constant(X)
 
     vif_data = pd.DataFrame()
@@ -95,18 +122,18 @@ def calcul_vif(df, variables):
         for i in range(X.shape[1])
     ]
 
-    print("\nVIF (multicolinéarité) :")
+    print("\nVIF (MULTICOLINÉARITÉ) :")
     print(vif_data)
 
     return vif_data
 
 
 if __name__ == "__main__":
+    print("Test du module de régression multiple...")
+
     from data_loader import load_data
     from preprocessing import preparer_donnees
     from features_engineering import construire_features
-
-    print("Exécution régression multiple...")
 
     df_logs, df_notes = load_data()
 
@@ -117,8 +144,8 @@ if __name__ == "__main__":
             df_final = construire_features(df_logs, df_notes)
 
             variables_retenues, modele_stats = selection_backward(df_final)
-            regression_multiple(df_final, variables_retenues)
-            calcul_vif(df_final, variables_retenues)
+            modele, y_test, y_pred, rmse, r2 = regression_multiple(df_final, variables_retenues)
+            vif_data = calcul_vif(df_final, variables_retenues)
         else:
             print("Erreur : prétraitement impossible.")
     else:

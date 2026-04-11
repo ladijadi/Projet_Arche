@@ -2,8 +2,8 @@
 
 from src.config import *
 from src.data_loader import load_data
-from src.preprocessing import preparer_donnees
-from src.exploration import lancer_exploration, lancer_exploration_brute, lancer_exploration_features
+from src.preprocessing import audit_qualite_donnees, preparer_donnees
+from src.exploration import identifier_etudiants_sans_activite, identifier_top_activites, lancer_exploration, lancer_exploration_brute, lancer_exploration_features
 from src.features_engineering import construire_features
 from src.multiple_regression import selection_backward, regression_multiple
 from src.comparison_model import arbre_decision_regression
@@ -30,10 +30,13 @@ def executer_pipeline():
     if df_logs is None or df_notes is None:
         print("Erreur lors du prétraitement.")
         return
+    audit_qualite_donnees(df_logs, df_notes)
+    
 
     # 3. Exploration des données brutes et préparées
     lancer_exploration(df_logs, df_notes)
     lancer_exploration_brute(df_logs, df_notes)
+
 
     # 4. Feature engineering
     df_final = construire_features(df_logs, df_notes)

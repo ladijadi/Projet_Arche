@@ -1,19 +1,31 @@
-# evaluation.py
+'''
+Description evaluation.py
+Projet : Prédiction de la note à partir des traces ARCHE
+
+Module d'évaluation comparative :
+- calcul des métriques
+- comparaison des modèles
+- affichage graphique des résultats
+
+@author: Khady Diagne
+@version: 1.0
+@date: Avril 2026
+'''
 
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 
 
 def calculer_metriques(y_true, y_pred) -> dict:
-    """
-    Calcule les métriques d'évaluation d'un modèle de régression.
-
+    '''
+    Calcul des métriques d'un modèle de régression
     :param y_true: valeurs réelles
     :param y_pred: valeurs prédites
-    :return: dictionnaire contenant MSE, RMSE, MAE et R²
-    """
+    :return: dictionnaire des métriques
+    '''
     mse = mean_squared_error(y_true, y_pred)
     rmse = np.sqrt(mse)
     mae = mean_absolute_error(y_true, y_pred)
@@ -35,17 +47,16 @@ def comparer_modeles(
     nom_reg: str = "Régression multiple",
     nom_tree: str = "Arbre de décision régressif",
 ) -> pd.DataFrame:
-    """
-    Compare les performances de deux modèles de régression.
-
-    :param y_test_reg: vraies valeurs pour la régression multiple
-    :param y_pred_reg: prédictions de la régression multiple
-    :param y_test_tree: vraies valeurs pour l'arbre
+    '''
+    Comparaison de deux modèles de régression
+    :param y_test_reg: vraies valeurs du modèle linéaire
+    :param y_pred_reg: prédictions du modèle linéaire
+    :param y_test_tree: vraies valeurs de l'arbre
     :param y_pred_tree: prédictions de l'arbre
     :param nom_reg: nom du modèle linéaire
     :param nom_tree: nom du modèle arbre
-    :return: DataFrame récapitulatif
-    """
+    :return: tableau récapitulatif
+    '''
     metriques_reg = calculer_metriques(y_test_reg, y_pred_reg)
     metriques_tree = calculer_metriques(y_test_tree, y_pred_tree)
 
@@ -108,16 +119,15 @@ def comparer_modeles(
 
     print(f"\nGain R² (arbre vs régression) : {diff_r2:.3f}")
     print(f"Gain RMSE (réduction d'erreur) : {diff_rmse:.3f}")
-    
+
     return resultats
 
 
 def afficher_comparaison_graphique(resultats: pd.DataFrame) -> None:
-    """
-    Affiche des graphiques comparatifs des métriques.
-
-    :param resultats: DataFrame de comparaison
-    """
+    '''
+    Affichage graphique des métriques comparatives
+    :param resultats: tableau des résultats
+    '''
     for metrique in ["RMSE", "MAE", "R²"]:
         plt.figure(figsize=(8, 5))
         plt.bar(resultats["Modèle"], resultats[metrique])
@@ -126,45 +136,15 @@ def afficher_comparaison_graphique(resultats: pd.DataFrame) -> None:
         plt.tight_layout()
         plt.show()
 
-'''import matplotlib.pyplot as plt
-
-variables = ["nb_contextes", "ratio_fichier"]
-coefficients = [0.0233, -1.1326]
-
-plt.figure()
-plt.bar(variables, coefficients)
-plt.xlabel("Variables")
-plt.ylabel("Coefficient")
-plt.title("Impact des variables sur la note (régression multiple)")
-plt.axhline(0)
-plt.show()
-
-import matplotlib.pyplot as plt
-
-modeles = ["Régression", "Arbre"]
-rmse = [0.91, 0.87]
-r2 = [0.233, 0.299]
-
-plt.figure()
-plt.bar(modeles, rmse)
-plt.title("Comparaison des modèles (RMSE)")
-plt.ylabel("RMSE")
-plt.show()
-
-plt.figure()
-plt.bar(modeles, r2)
-plt.title("Comparaison des modèles (R²)")
-plt.ylabel("R²")
-plt.show()'''
 
 if __name__ == "__main__":
+    print("Test du module d'évaluation comparative...")
+
     from data_loader import load_data
     from preprocessing import preparer_donnees
     from features_engineering import construire_features
     from multiple_regression import selection_backward, regression_multiple
     from comparison_model import arbre_decision_regression
-
-    print("Exécution de l'évaluation comparative...")
 
     df_logs, df_notes = load_data()
 
@@ -174,14 +154,11 @@ if __name__ == "__main__":
         if df_logs is not None and df_notes is not None:
             df_final = construire_features(df_logs, df_notes)
 
-            # Régression multiple
             variables_retenues, _ = selection_backward(df_final)
             _, y_test_reg, y_pred_reg, _, _ = regression_multiple(df_final, variables_retenues)
 
-            # Arbre de décision régressif
             _, _, y_test_tree, y_pred_tree, _, _ = arbre_decision_regression(df_final)
 
-            # Comparaison finale
             resultats = comparer_modeles(
                 y_test_reg=y_test_reg,
                 y_pred_reg=y_pred_reg,
@@ -190,7 +167,6 @@ if __name__ == "__main__":
             )
 
             afficher_comparaison_graphique(resultats)
-
         else:
             print("Erreur : prétraitement impossible.")
     else:
