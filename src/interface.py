@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 '''
 Description interface.py
 Projet : Prédiction de la note à partir des traces ARCHE
@@ -8,7 +9,7 @@ Module d'interface graphique :
 - affichage d'une interprétation simple
 
 @author: Khady Diagne
-@version: 1.0
+@version: 2.0
 @date: Avril 2026
 '''
 
@@ -22,7 +23,6 @@ from preprocessing import preparer_donnees
 from features_engineering import construire_features
 from multiple_regression import selection_backward, regression_multiple
 from comparison_model import arbre_decision_regression
-
 
 class ApplicationPrediction(tk.Tk):
     '''
@@ -38,18 +38,28 @@ class ApplicationPrediction(tk.Tk):
         self.title(config.APP_TITLE)
         self.geometry("720x650")
         self.minsize(680, 520)
-
+        self.entries_variables = {}
+        self.texte_reperes = "Chargement des repères..."
+        
         self.modele_reg = None
         self.modele_tree = None
         self.variables_reg = None
+        self.variables_tree = None
+
+        self.rmse_reg = None
+        self.r2_reg = None
+        self.rmse_tree = None
+        self.r2_tree = None
 
         self.df_final = None
         self.moyenne_nb_contextes = None
         self.moyenne_ratio_fichier = None
 
         self._creer_zone_scrollable()
-        self._creer_widgets()
         self._entrainer_modeles()
+        self._creer_widgets()
+        
+        
 
     def _creer_zone_scrollable(self):
         '''
@@ -107,26 +117,10 @@ class ApplicationPrediction(tk.Tk):
             fg="#444444"
         ).pack(pady=(0, 8))
 
-        cadre_form = tk.Frame(parent)
-        cadre_form.pack(pady=8)
+        self.cadre_form = tk.Frame(parent)
+        self.cadre_form.pack(pady=8)
 
-        tk.Label(
-            cadre_form,
-            text="Nombre de contextes consultés :",
-            font=("Arial", 11)
-        ).grid(row=0, column=0, sticky="w", padx=8, pady=6)
-
-        self.entry_nb_contextes = tk.Entry(cadre_form, width=20, font=("Arial", 11))
-        self.entry_nb_contextes.grid(row=0, column=1, padx=8, pady=6)
-
-        tk.Label(
-            cadre_form,
-            text="Ratio d'interactions avec les fichiers (0 à 1) :",
-            font=("Arial", 11)
-        ).grid(row=1, column=0, sticky="w", padx=8, pady=6)
-
-        self.entry_ratio_fichier = tk.Entry(cadre_form, width=20, font=("Arial", 11))
-        self.entry_ratio_fichier.grid(row=1, column=1, padx=8, pady=6)
+        self._creer_champs_dynamiques(self.cadre_form)
 
         tk.Button(
             parent,
@@ -141,6 +135,34 @@ class ApplicationPrediction(tk.Tk):
         self._creer_bloc_modeles(parent)
         self._creer_bloc_interpretation(parent)
         self._creer_bloc_reperes(parent)
+
+    def _creer_champs_dynamiques(self, parent):
+        '''
+        Création dynamique des champs de saisie selon les variables retenues
+        '''
+        self.entries_variables = {}
+
+        libelles = {
+            "nb_contextes": "Nombre de contextes consultés :",
+            "ratio_test": "Ratio d'activités de test (0 à 1) :",
+            "ratio_interaction": "Ratio d'interactions (0 à 1) :",
+            "temps_moyen_action": "Temps moyen par action (en secondes) :",
+            "ratio_fichier": "Ratio d'interactions avec les fichiers (0 à 1) :"
+        }
+
+        for i, variable in enumerate(self.variables_reg):
+            texte = libelles.get(variable, f"{variable} :")
+
+            tk.Label(
+                parent,
+                text=texte,
+                font=("Arial", 11)
+            ).grid(row=i, column=0, sticky="w", padx=8, pady=6)
+
+            entry = tk.Entry(parent, width=20, font=("Arial", 11))
+            entry.grid(row=i, column=1, padx=8, pady=6)
+
+            self.entries_variables[variable] = entry
 
     def _creer_bloc_resultat(self, parent):
         cadre = tk.Frame(parent, bd=1, relief="solid", padx=12, pady=10)
@@ -180,7 +202,7 @@ class ApplicationPrediction(tk.Tk):
 
         self.label_incertitude = tk.Label(
             cadre,
-            text="Précision estimée : ±1 point de note",
+            text="Précision estimée : ±1 point de note environ",
             font=("Arial", 9),
             fg="#666666"
         )
@@ -271,7 +293,7 @@ class ApplicationPrediction(tk.Tk):
 
         self.label_reperes = tk.Label(
             cadre,
-            text="Chargement des repères...",
+            text=self.texte_reperes,
             justify="left",
             font=("Arial", 10),
             wraplength=620
@@ -298,17 +320,39 @@ class ApplicationPrediction(tk.Tk):
             self.moyenne_nb_contextes = self.df_final["nb_contextes"].mean()
             self.moyenne_ratio_fichier = self.df_final["ratio_fichier"].mean()
 
-            self.label_reperes.config(
-                text=(
-                    f"Nb contextes moyen : {self.moyenne_nb_contextes:.2f}\n"
-                    f"Ratio fichiers moyen : {self.moyenne_ratio_fichier:.2f}"
-                )
+            # 1. Sélection des variables
+            self.variables_reg, _ = selection_backward(self.df_final)
+
+            if not isinstance(self.variables_reg, list) or len(self.variables_reg) == 0:
+                raise ValueError(f"Variables de régression invalides : {self.variables_reg}")
+
+            # 2. Texte des repères
+            self.texte_reperes = (
+                f"Nb contextes moyen : {self.moyenne_nb_contextes:.2f}\n"
+                f"Ratio fichiers moyen : {self.moyenne_ratio_fichier:.2f}\n"
+                f"Variables retenues : {', '.join(str(var) for var in self.variables_reg)}"
             )
 
-            self.variables_reg, _ = selection_backward(self.df_final)
-            self.modele_reg, _, _, _, _ = regression_multiple(self.df_final, self.variables_reg)
+            # 3. Entraînement de la régression
+            self.modele_reg, _, _, self.rmse_reg, self.r2_reg = regression_multiple(
+                self.df_final,
+                self.variables_reg
+            )
 
-            self.modele_tree, _, _, _, _, _ = arbre_decision_regression(self.df_final)
+            # 4. Entraînement de l'arbre
+            (
+                self.modele_tree,
+                _,
+                _,
+                _,
+                self.rmse_tree,
+                self.r2_tree,
+                _,
+                self.variables_tree
+            ) = arbre_decision_regression(
+                self.df_final,
+                variables=self.variables_reg
+            )
 
         except Exception as e:
             messagebox.showerror("Erreur", f"Impossible d'initialiser les modèles :\n{e}")
@@ -318,48 +362,59 @@ class ApplicationPrediction(tk.Tk):
         Prédiction de la note à partir des saisies utilisateur
         '''
         try:
-            nb_contextes = float(self.entry_nb_contextes.get().strip())
-            ratio_fichier = float(self.entry_ratio_fichier.get().strip())
+            x_input = {}
 
-            if nb_contextes < 0:
-                raise ValueError("Le nombre de contextes doit être positif.")
+            for variable, entry in self.entries_variables.items():
+                valeur = float(entry.get().strip())
 
-            if not (0 <= ratio_fichier <= 1):
-                raise ValueError("Le ratio_fichier doit être compris entre 0 et 1.")
+                if "ratio" in variable or "engagement" in variable:
+                    if not (0 <= valeur <= 1):
+                        raise ValueError(f"La variable {variable} doit être comprise entre 0 et 1.")
 
-            x_input = {
-                "nb_contextes": nb_contextes,
-                "ratio_fichier": ratio_fichier
-            }
+                if variable in ["nb_contextes", "temps_moyen_action"] and valeur < 0:
+                    raise ValueError(f"La variable {variable} doit être positive.")
+
+                x_input[variable] = valeur
 
             x_reg = [[x_input[var] for var in self.variables_reg]]
             prediction_reg = self.modele_reg.predict(x_reg)[0]
 
-            x_tree = [[nb_contextes, ratio_fichier]]
+            x_tree = [[x_input[var] for var in self.variables_tree]]
             prediction_tree = self.modele_tree.predict(x_tree)[0]
 
             self.label_resultat_reg.config(
-                text=f"Régression multiple : note prédite = {prediction_reg:.2f}/20"
+                text=(
+                    f"Régression multiple : note prédite = {prediction_reg:.2f}/20 "
+                    f"(RMSE = {self.rmse_reg:.3f}, R² = {self.r2_reg:.3f})"
+                )
             )
 
             self.label_resultat_tree.config(
-                text=f"Arbre de décision : note prédite = {prediction_tree:.2f}/20"
+                text=(
+                    f"Arbre de décision : note prédite = {prediction_tree:.2f}/20 "
+                    f"(RMSE = {self.rmse_tree:.3f}, R² = {self.r2_tree:.3f})"
+                )
             )
 
-            modele_recommande, note_recommandee = self._choisir_modele(prediction_reg, prediction_tree)
+            modele_recommande, note_recommandee, justification = self._choisir_modele(
+                prediction_reg,
+                prediction_tree
+            )
 
             self.label_modele_recommande.config(
                 text=f"Modèle recommandé : {modele_recommande}"
             )
 
             self.label_justification_modele.config(
-                text="Justification : modèle légèrement plus performant sur cet échantillon, "
-                     "tout en conservant des performances globalement modérées."
+                text=f"Justification : {justification}"
             )
 
             self.label_note_recommandee.config(
                 text=f"Note estimée : {note_recommandee:.2f}/20"
             )
+
+            nb_contextes = x_input.get("nb_contextes", self.moyenne_nb_contextes)
+            ratio_fichier = x_input.get("ratio_fichier", self.moyenne_ratio_fichier)
 
             self.label_niveau.config(
                 text=f"Niveau estimé : {self._generer_niveau(note_recommandee)}"
@@ -387,9 +442,30 @@ class ApplicationPrediction(tk.Tk):
             messagebox.showerror("Erreur", f"Impossible de faire la prédiction :\n{e}")
 
     def _choisir_modele(self, pred_reg, pred_tree):
-        if config.MODELE_RECOMMANDE == "Arbre de décision régressif":
-            return config.MODELE_RECOMMANDE, pred_tree
-        return config.MODELE_RECOMMANDE, pred_reg
+        '''
+        Choisit le modèle à recommander à partir des performances globales.
+        '''
+        if self.rmse_tree < self.rmse_reg and self.r2_tree > self.r2_reg:
+            justification = (
+                "l'arbre de décision présente une erreur moyenne plus faible "
+                "et un coefficient de détermination légèrement supérieur. "
+                "Le gain reste toutefois modéré."
+            )
+            return "Arbre de décision régressif", pred_tree, justification
+
+        if self.rmse_reg < self.rmse_tree and self.r2_reg > self.r2_tree:
+            justification = (
+                "la régression multiple présente de meilleures performances globales "
+                "sur les métriques principales tout en restant plus interprétable."
+            )
+            return "Régression multiple", pred_reg, justification
+
+        justification = (
+            "les performances des deux modèles sont proches. "
+            "La régression multiple reste plus lisible, tandis que l'arbre "
+            "peut mieux représenter des effets de seuil."
+        )
+        return "Comparaison nuancée", pred_reg, justification
 
     def _generer_niveau(self, note):
         if note >= 14:
@@ -420,14 +496,14 @@ class ApplicationPrediction(tk.Tk):
         elif nb_contextes >= config.SEUIL_CONTEXTES_MOYEN:
             commentaires.append("activité modérée, impact limité sur la performance")
         else:
-            commentaires.append("activité peu diversifiée, pouvant expliquer une performance plus faible")
+            commentaires.append("activité peu diversifiée, pouvant être associée à une performance plus faible")
 
         if ratio_fichier > config.SEUIL_RATIO_FICHIER_ELEVE:
-            commentaires.append("forte dépendance aux fichiers, associée à des notes plus faibles dans les données")
+            commentaires.append("forte dépendance aux fichiers, souvent associée à des notes plus faibles")
         elif ratio_fichier > config.SEUIL_RATIO_FICHIER_MOYEN:
             commentaires.append("usage modéré des fichiers")
         else:
-            commentaires.append("profil équilibré dans l'utilisation des ressources")
+            commentaires.append("profil plus équilibré dans l'utilisation des ressources")
 
         return " ; ".join(commentaires)
 

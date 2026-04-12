@@ -1,3 +1,5 @@
+# preprocessing.py
+# -*- coding: utf-8 -*-
 '''
 Description preprocessing.py
 Projet : Prédiction de la note à partir des traces ARCHE
@@ -94,6 +96,7 @@ def _traiter_notes(df_notes: pd.DataFrame) -> pd.DataFrame:
     print("\n[1] Analyse du fichier notes")
 
     data = df_notes.copy()
+    data = data[(data[NOTES_TARGET_COL] >= 0) & (data[NOTES_TARGET_COL] <= 20)]
 
     # Conversion du pseudo en numérique
     data[NOTES_USER_COL] = pd.to_numeric(data[NOTES_USER_COL], errors="coerce")

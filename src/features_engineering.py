@@ -1,3 +1,6 @@
+# features_engineering.py
+# -*- coding: utf-8 -*-
+
 '''
 Description features_engineering.py
 Projet : Prédiction de la note à partir des traces ARCHE
@@ -50,7 +53,11 @@ def construire_features(df_logs: pd.DataFrame, df_notes: pd.DataFrame) -> pd.Dat
     # 4. Variable composant
     df_ratio = _calculer_ratio_fichier(data, nb_actions)
 
-    # 5. Fusion finale avec les notes
+    # 5. Variable temps moyen par jour actif
+
+    df_temps_jour = _calculer_temps_moyen_jour_actif(data)
+
+    # 6. Fusion finale avec les notes
     df_final = df_notes.copy()
 
     features = [
@@ -58,6 +65,7 @@ def construire_features(df_logs: pd.DataFrame, df_notes: pd.DataFrame) -> pd.Dat
         nb_actions,
         nb_jours,
         df_temps,
+        df_temps_jour,
         df_cat,
         df_ratio,
     ]
@@ -144,6 +152,44 @@ def _calculer_temps_moyen_action(df_logs: pd.DataFrame, nb_actions: pd.DataFrame
     )
 
     res = res[[LOGS_USER_COL, "temps_moyen_action"]]
+
+    return res
+
+def _calculer_temps_moyen_jour_actif(df_logs: pd.DataFrame) -> pd.DataFrame:
+    '''
+    Temps moyen d'activité par jour actif
+    '''
+    data = df_logs.copy()
+
+    # Tri des logs par étudiant et par date
+    data = data.sort_values(by=[LOGS_USER_COL, LOGS_TIME_COL])
+
+    # Ajout du jour
+    data["jour"] = data[LOGS_TIME_COL].dt.date
+
+    # Calcul des écarts entre actions successives au sein d'un même jour
+    data["ecart"] = (
+        data.groupby([LOGS_USER_COL, "jour"])[LOGS_TIME_COL]
+        .diff()
+        .dt.total_seconds()
+    )
+
+    # Conservation des écarts courts assimilables à une activité continue
+    petits_ecarts = data[(data["ecart"] > 0) & (data["ecart"] < 300)]
+
+    # Temps total par étudiant et par jour
+    temps_par_jour = (
+        petits_ecarts.groupby([LOGS_USER_COL, "jour"])["ecart"]
+        .sum()
+        .reset_index(name="temps_jour_sec")
+    )
+
+    # Temps moyen d'activité par jour actif
+    res = (
+        temps_par_jour.groupby(LOGS_USER_COL)["temps_jour_sec"]
+        .mean()
+        .reset_index(name="temps_moyen_jour_actif")
+    )
 
     return res
 

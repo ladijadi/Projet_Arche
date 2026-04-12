@@ -1,4 +1,17 @@
-# exploration.py
+# -*- coding: utf-8 -*-
+'''
+Description exploration.py
+Projet : Prédiction de la note à partir des traces ARCHE
+
+Module d'exploration :
+- exploration des données brutes
+- exploration des variables construites
+- visualisations descriptives
+
+@author: Khady Diagne
+@version: 1.1
+@date: Avril 2026
+'''
 
 import pandas as pd
 import numpy as np
@@ -8,20 +21,20 @@ from config import (
     LOGS_USER_COL,
     LOGS_CONTEXT_COL,
     LOGS_EVENT_COL,
+    LOGS_COMPONENT_COL,
     NOTES_USER_COL,
     NOTES_TARGET_COL,
     TOP_N_EVENTS,
 )
 
-# EXPLORATION DONNÉES BRUTES
 
 def explorer_logs(df_logs: pd.DataFrame) -> pd.Series:
-    """
+    '''
     Affiche un résumé descriptif du fichier logs.
 
-    :param df_logs: DataFrame des logs prétraités
+    :param df_logs: dataframe des logs prétraités
     :return: série du nombre d'actions par étudiant
-    """
+    '''
     print("\nEXPLORATION DES LOGS")
 
     nb_actions_total = len(df_logs)
@@ -42,12 +55,13 @@ def explorer_logs(df_logs: pd.DataFrame) -> pd.Series:
 
     return actions_par_etudiant
 
+
 def explorer_notes(df_notes: pd.DataFrame) -> None:
-    """
+    '''
     Affiche un résumé descriptif du fichier notes.
 
-    :param df_notes: DataFrame des notes prétraitées
-    """
+    :param df_notes: dataframe des notes prétraitées
+    '''
     print("\nEXPLORATION DES NOTES")
 
     nb_etudiants = df_notes[NOTES_USER_COL].nunique()
@@ -64,14 +78,13 @@ def explorer_notes(df_notes: pd.DataFrame) -> None:
     print(df_notes[NOTES_TARGET_COL].describe())
 
 
-def identifier_etudiants_sans_activite(df_logs: pd.DataFrame, df_notes: pd.DataFrame) -> pd.DataFrame:
-    """
+def identifier_etudiants_sans_activite(
+    df_logs: pd.DataFrame,
+    df_notes: pd.DataFrame
+) -> pd.DataFrame:
+    '''
     Identifie les étudiants présents dans les notes mais absents des logs.
-
-    :param df_logs: DataFrame des logs prétraités
-    :param df_notes: DataFrame des notes prétraitées
-    :return: DataFrame des étudiants sans activité
-    """
+    '''
     print("\nÉTUDIANTS SANS ACTIVITÉ SUR ARCHE")
 
     pseudos_actifs = set(df_logs[LOGS_USER_COL].unique())
@@ -90,38 +103,44 @@ def identifier_etudiants_sans_activite(df_logs: pd.DataFrame, df_notes: pd.DataF
 
     return df_absents
 
+
 def identifier_top_activites(df_logs: pd.DataFrame, df_notes: pd.DataFrame):
-    actions_par_user = df_logs.groupby("pseudo").size().reset_index(name="nb_actions")
-    actions_par_user = actions_par_user.sort_values(by="nb_actions", ascending=False)
+    '''
+    Identifie les étudiants les plus actifs.
+    '''
+    actions_par_user = (
+        df_logs.groupby(LOGS_USER_COL)
+        .size()
+        .reset_index(name="nb_actions")
+        .sort_values(by="nb_actions", ascending=False)
+    )
 
     print("\nTop 5 étudiants les plus actifs :")
     print(actions_par_user.head())
 
-    top_user = actions_par_user.iloc[0]["pseudo"]
+    top_user = actions_par_user.iloc[0][LOGS_USER_COL]
     nb_actions = actions_par_user.iloc[0]["nb_actions"]
+
     print(f"\nÉtudiant le plus actif : {top_user} avec {nb_actions} actions")
 
-    # Vérifier la note
-    note_user = df_notes[df_notes["pseudo"] == top_user]
+    note_user = df_notes[df_notes[NOTES_USER_COL] == top_user]
+
     if note_user.empty:
-        print("⚠️ Aucun score trouvé → probablement admin ou bruit")
+        print("Aucune note trouvée pour cet étudiant.")
     else:
-        print(f"Note de cet étudiant : {note_user['note'].values[0]}")
+        print(f"Note de cet étudiant : {note_user[NOTES_TARGET_COL].values[0]}")
 
     return actions_par_user, top_user
+
 
 def analyser_relation_activite_note(
     df_logs: pd.DataFrame,
     df_notes: pd.DataFrame
 ) -> pd.DataFrame:
-    """
-    Construit un tableau simple liant nombre d'actions et note,
+    '''
+    Construit un tableau liant nombre d'actions et note,
     puis calcule la corrélation linéaire.
-
-    :param df_logs: DataFrame des logs prétraités
-    :param df_notes: DataFrame des notes prétraitées
-    :return: DataFrame fusionné avec nb_actions et note
-    """
+    '''
     print("\nRELATION ENTRE ACTIVITÉ ET NOTE")
 
     df_actions = df_logs.groupby(LOGS_USER_COL).size().reset_index(name="nb_actions")
@@ -147,17 +166,15 @@ def analyser_relation_activite_note(
 
     return df_relation
 
-def afficher_graphiques_bruts(df_logs: pd.DataFrame, df_notes: pd.DataFrame, df_relation: pd.DataFrame) -> None:
-    """
-    Affiche trois graphiques:
-    - distribution des actions par étudiant
-    - distribution des notes
-    - relation nb_actions / note
 
-    :param df_logs: DataFrame des logs prétraités
-    :param df_notes: DataFrame des notes prétraitées
-    :param df_relation: DataFrame fusionné activité/note
-    """
+def afficher_graphiques_bruts(
+    df_logs: pd.DataFrame,
+    df_notes: pd.DataFrame,
+    df_relation: pd.DataFrame
+) -> None:
+    '''
+    Affiche des graphiques descriptifs de base.
+    '''
     actions_par_etudiant = df_logs.groupby(LOGS_USER_COL).size()
 
     plt.figure(figsize=(8, 5))
@@ -184,11 +201,11 @@ def afficher_graphiques_bruts(df_logs: pd.DataFrame, df_notes: pd.DataFrame, df_
     plt.tight_layout()
     plt.show()
 
-def afficher_top_evenements(df_logs: pd.DataFrame) -> None:
-    """
-    Affiche les événements les plus fréquents sous forme de graphique.
-    """
 
+def afficher_top_evenements(df_logs: pd.DataFrame) -> None:
+    '''
+    Affiche les événements les plus fréquents.
+    '''
     top_events = df_logs[LOGS_EVENT_COL].value_counts().head(TOP_N_EVENTS)
 
     plt.figure(figsize=(10, 5))
@@ -200,7 +217,11 @@ def afficher_top_evenements(df_logs: pd.DataFrame) -> None:
     plt.tight_layout()
     plt.show()
 
+
 def afficher_categories_evenement(df_logs: pd.DataFrame) -> None:
+    '''
+    Affiche la répartition des catégories d'événements.
+    '''
     print("\nRÉPARTITION DES CATÉGORIES D'ÉVÉNEMENTS")
     print(df_logs["categorie_evenement"].value_counts().to_string())
 
@@ -215,14 +236,22 @@ def afficher_categories_evenement(df_logs: pd.DataFrame) -> None:
     plt.tight_layout()
     plt.show()
 
+
 def afficher_composants(df_logs: pd.DataFrame) -> None:
+    '''
+    Affiche la répartition des composants.
+    '''
     print("\nRÉPARTITION DES COMPOSANTS")
-    print(df_logs["composant"].value_counts().to_string())
+    print(df_logs[LOGS_COMPONENT_COL].value_counts().to_string())
+
 
 def explorer_nb_contextes_par_etudiant(df_logs: pd.DataFrame) -> None:
+    '''
+    Explore la distribution du nombre de contextes par étudiant.
+    '''
     print("\nDISTRIBUTION DU NOMBRE DE CONTEXTES PAR ÉTUDIANT")
 
-    nb_contextes_par_user = df_logs.groupby("pseudo")["contexte"].nunique()
+    nb_contextes_par_user = df_logs.groupby(LOGS_USER_COL)[LOGS_CONTEXT_COL].nunique()
     print(nb_contextes_par_user.describe())
 
     plt.figure(figsize=(8, 5))
@@ -233,7 +262,11 @@ def explorer_nb_contextes_par_etudiant(df_logs: pd.DataFrame) -> None:
     plt.tight_layout()
     plt.show()
 
+
 def lancer_exploration(df_logs: pd.DataFrame, df_notes: pd.DataFrame) -> None:
+    '''
+    Lance l'exploration des données brutes.
+    '''
     print("\nLANCEMENT DE L'EXPLORATION DES DONNÉES BRUTES...")
 
     explorer_logs(df_logs)
@@ -250,9 +283,11 @@ def lancer_exploration(df_logs: pd.DataFrame, df_notes: pd.DataFrame) -> None:
 
     print("\nEXPLORATION DES DONNÉES BRUTES TERMINÉE")
 
-# EXPLORATION DES FEATURES
 
 def afficher_correlation_note(df_features: pd.DataFrame) -> pd.Series:
+    '''
+    Affiche la corrélation des features avec la note.
+    '''
     print("\nCORRÉLATION DES FEATURES AVEC LA NOTE")
 
     corr_note = (
@@ -263,15 +298,20 @@ def afficher_correlation_note(df_features: pd.DataFrame) -> pd.Series:
     print(corr_note)
     return corr_note
 
+
 def afficher_matrice_correlation(df_features: pd.DataFrame) -> None:
-    print("\nAffichage de la matrice de corrélation...")
+    '''
+    Affiche la matrice de corrélation des features.
+    '''
+    print("\nAFFICHAGE DE LA MATRICE DE CORRÉLATION...")
 
     variables = [
-        "note",
+        NOTES_TARGET_COL,
         "nb_contextes",
         "nb_actions",
         "nb_jours_actifs",
         "temps_moyen_action",
+        "temps_moyen_jour_actif",
         "ratio_test",
         "ratio_interaction",
         "ratio_consultation",
@@ -280,7 +320,6 @@ def afficher_matrice_correlation(df_features: pd.DataFrame) -> None:
     ]
 
     variables_presentes = [col for col in variables if col in df_features.columns]
-
     corr = df_features[variables_presentes].corr()
 
     fig, ax = plt.subplots(figsize=(10, 8))
@@ -300,13 +339,18 @@ def afficher_matrice_correlation(df_features: pd.DataFrame) -> None:
     plt.tight_layout()
     plt.show()
 
-    print("\nMatrice de corrélation affichée.")
+    print("\nMATRICE DE CORRÉLATION AFFICHÉE.")
+
 
 def lancer_exploration_features(df_final: pd.DataFrame) -> None:
+    '''
+    Lance l'exploration des variables construites.
+    '''
     print("\nLANCEMENT DE L'EXPLORATION DES FEATURES...")
     afficher_correlation_note(df_final)
     afficher_matrice_correlation(df_final)
     print("\nEXPLORATION DES FEATURES TERMINÉE")
+
 
 if __name__ == "__main__":
     from data_loader import load_data
