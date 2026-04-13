@@ -126,6 +126,8 @@ L'interface permet :
 - de proposer une interprétation synthétique du profil
 - de situer l'utilisateur par rapport aux repères du jeu de données
 
+![Interface ARCHE](output/interface.png)
+
 ## Limites
 
 Le projet présente plusieurs limites :
