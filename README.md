@@ -162,6 +162,6 @@ IDMC - Université de Lorraine
 
 © 2026 Khady Diagne. Tous droits réservés.
 
-Ce projet a été réalisé dans un cadre académique (Master 2 Science des Données, IDMC - Université de Lorraine). Le code source et les documents associés ne peuvent pas être reproduits, modifiés, distribués ou exploités à des fins commerciales sans autorisation écrite préalable de l'autrice.
+Ce projet a été réalisé dans un cadre académique (Master 2 Science des Données, IDMC - Université de Lorraine). Le code source et les documents associés ne peuvent pas être reproduits, modifiés, distribués ou exploités à des fins commerciales sans autorisation écrite préalable de l'autrice et de l'université de lorraine.
 
 
