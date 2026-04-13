@@ -1,5 +1,7 @@
 ﻿# Prédiction de la note à partir des traces sur ARCHE
 
+Projet de data science de bout en bout visant à prédire la performance académique à partir de données comportementales, avec une approche combinant data engineering, modélisation statistique et interface utilisateur.
+
 Projet réalisé dans le cadre du Master 2 Science des Données (IDMC - Université de Lorraine, 2025-2026).
 
 ## Objectif
@@ -52,6 +54,10 @@ Le projet suit les étapes suivantes :
 6. Modélisation comparative par arbre de décision
 7. Évaluation des performances
 8. Restitution via une interface graphique
+
+### Pipeline global
+
+Logs bruts → Prétraitement → Feature engineering → Modélisation → Évaluation → Interface utilisateur
 
 ## Variables construites
 
@@ -118,13 +124,13 @@ tkinter est généralement inclus avec Python selon l'environnement.
 
 ## Interface graphique
 
-L'interface permet :
+Une interface interactive a été développée afin de permettre une utilisation concrète des modèles.
 
-- de saisir les variables explicatives retenues
-- d'obtenir la prédiction des deux modèles
-- d'afficher un modèle recommandé
-- de proposer une interprétation synthétique du profil
-- de situer l'utilisateur par rapport aux repères du jeu de données
+L'utilisateur peut :
+- saisir les variables explicatives
+- obtenir les prédictions des deux modèles
+- visualiser le modèle recommandé
+- accéder à une interprétation du profil
 
 ![Interface ARCHE](output/interface.png)
 
